@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="mn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ {'content': 'Агуулга', 'facebook': 'Facebook', 'chat': 'Зурвас', 'bookings': 'Захиалга'}[active_page] }} | Медива самбар</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="{{ url_for('dashboard') }}">
+                <span class="brand-symbol-wrap"><img class="brand-symbol" src="{{ url_for('static', filename='mediva-symbol.png') }}" alt=""></span>
+                <span class="brand-name">МЕДИВА</span>
+            </a>
+            <p class="nav-caption">ҮНДСЭН ЦЭС</p>
+            <nav class="side-nav" aria-label="Үндсэн цэс">
+                <a class="nav-link{% if active_page == 'content' %} active{% endif %}" href="{{ url_for('dashboard') }}"><span class="nav-icon" aria-hidden="true">▤</span>Агуулга</a>
+                <a class="nav-link{% if active_page == 'facebook' %} active{% endif %}" href="{{ url_for('facebook') }}"><span class="nav-icon" aria-hidden="true">f</span>Facebook</a>
+                <a class="nav-link{% if active_page == 'chat' %} active{% endif %}" href="{{ url_for('chat') }}"><span class="nav-icon" aria-hidden="true">◌</span>Зурвас</a>
+                <a class="nav-link{% if active_page == 'bookings' %} active{% endif %}" href="{{ url_for('bookings') }}"><span class="nav-icon" aria-hidden="true">▦</span>Захиалга</a>
+                <a class="nav-link{% if active_page == 'tours' %} active{% endif %}" href="{{ url_for('manage_records', entity='tours') }}"><span class="nav-icon" aria-hidden="true">⌁</span>Аялал</a>
+                <a class="nav-link{% if active_page == 'staff' %} active{% endif %}" href="{{ url_for('manage_records', entity='staff') }}"><span class="nav-icon" aria-hidden="true">♙</span>Ажилтан</a>
+            </nav>
+            <div class="sidebar-account">
+                <span class="sidebar-email">{{ user_email }}</span>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="text-button" type="submit">Гарах</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="main-panel">
+            <header class="topbar">
+                <span class="topbar-label">Удирдлагын самбар</span>
+                <span class="account-email">{{ user_email }}</span>
+            </header>
+
+            <main class="dashboard-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <div class="notice notice-{{ category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endwith %}
+
+                {% if active_page == 'content' %}
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">АГУУЛГА</p>
+                            <h1>Ноорог нийтлэлүүд</h1>
+                            <p class="muted">Хадгалсан нийтлэлүүдийн жагсаалт.</p>
+                        </div>
+                        {% if drafts is not none %}<span class="count-pill">{{ drafts|length }} нийтлэл</span>{% endif %}
+                    </div>
+
+                    {% if drafts is none %}
+                        <section class="empty-state"><h2>Нийтлэлүүдийг харуулах боломжгүй</h2></section>
+                    {% elif drafts %}
+                        <section class="draft-list" aria-label="Ноорог постууд">
+                            {% for draft in drafts %}
+                                <article class="draft-card">
+                                    <div class="draft-topline">
+                                        <span class="status status-{{ draft.status|lower|replace(' ', '-') }}">{{ {'draft': 'Ноорог', 'review': 'Хүлээгдэж байна', 'pending': 'Хүлээгдэж байна', 'approved': 'Батлагдсан', 'rejected': 'Татгалзсан', 'published': 'Нийтэлсэн'}.get(draft.status|lower, draft.status) }}</span>
+                                        {% if draft.created_at %}<time>{{ draft.created_at[:10] }}</time>{% endif %}
+                                    </div>
+                                    <h2>{{ draft.title }}</h2>
+                                    <p>{{ draft.body }}</p>
+                                    {% if draft.status|lower in ['review', 'pending'] %}
+                                        <div class="draft-actions">
+                                            <form method="post" action="{{ url_for('decide_draft', draft_id=draft.id, decision='approve') }}">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button class="draft-action approve-button" type="submit">Батлах</button>
+                                            </form>
+                                            <form method="post" action="{{ url_for('decide_draft', draft_id=draft.id, decision='reject') }}">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                                <button class="draft-action reject-button" type="submit">Татгалзах</button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </article>
+                            {% endfor %}
+                        </section>
+                    {% else %}
+                        <section class="empty-state">
+                            <span class="empty-icon" aria-hidden="true">✦</span>
+                            <h2>Ноорог нийтлэл алга</h2>
+                            <p class="muted">Одоогоор харуулах нийтлэл байхгүй байна.</p>
+                        </section>
+                    {% endif %}
+                {% elif active_page == 'bookings' %}
+                    <div class="page-heading">
+                        <div>
+                            <p class="eyebrow">ҮЙЛЧИЛГЭЭ</p>
+                            <h1>Захиалга</h1>
+                            <p class="muted">Ирсэн захиалгуудын жагсаалт.</p>
+                        </div>
+                        {% if bookings is not none %}<span class="count-pill">{{ bookings|length }} захиалга</span>{% endif %}
+                    </div>
+
+                    {% if bookings is none %}
+                        <section class="empty-state"><h2>Захиалгуудыг харуулах боломжгүй</h2></section>
+                    {% elif bookings %}
+                        <div class="table-wrap">
+                            <table class="booking-table">
+                                <thead>
+                                    <tr>
+                                        <th>Нэр</th>
+                                        <th>И-мэйл</th>
+                                        <th>Огноо</th>
+                                        <th>Хүний тоо</th>
+                                        <th>Төлөв</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for booking in bookings %}
+                                        <tr>
+                                            <td class="booking-name">{{ booking.customer_name }}</td>
+                                            <td>{{ booking.contact_email }}</td>
+                                            <td>{{ booking.booking_date }}</td>
+                                            <td>{{ booking.party_size }}</td>
+                                            <td><span class="status status-{{ booking.status|lower|replace(' ', '-') }}">{{ {'pending': 'Хүлээгдэж байна', 'confirmed': 'Баталгаажсан'}.get(booking.status|lower, booking.status) }}</span></td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <section class="empty-state">
+                            <span class="empty-icon" aria-hidden="true">✦</span>
+                            <h2>Захиалга алга</h2>
+                            <p class="muted">Одоогоор харуулах захиалга байхгүй байна.</p>
+                        </section>
+                    {% endif %}
+                {% else %}
+                    <section class="coming-soon">
+                        <span class="empty-icon" aria-hidden="true">{% if active_page == 'facebook' %}f{% else %}◌{% endif %}</span>
+                        <h1>Удахгүй</h1>
+                        <p class="muted">{% if active_page == 'facebook' %}Facebook холболт удахгүй нэмэгдэнэ.{% else %}Зурвасын хэсэг удахгүй нэмэгдэнэ.{% endif %}</p>
+                    </section>
+                {% endif %}
+            </main>
+        </div>
+    </div>
+</body>
+</html>

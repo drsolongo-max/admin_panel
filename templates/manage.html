@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="mn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ config.title }} | Медива самбар</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+    <div class="app-shell">
+        <aside class="sidebar">
+            <a class="brand" href="{{ url_for('dashboard') }}">
+                <span class="brand-symbol-wrap"><img class="brand-symbol" src="{{ url_for('static', filename='mediva-symbol.png') }}" alt=""></span>
+                <span class="brand-name">МЕДИВА</span>
+            </a>
+            <p class="nav-caption">ҮНДСЭН ЦЭС</p>
+            <nav class="side-nav" aria-label="Үндсэн цэс">
+                <a class="nav-link" href="{{ url_for('dashboard') }}"><span class="nav-icon" aria-hidden="true">▤</span>Агуулга</a>
+                <a class="nav-link" href="{{ url_for('facebook') }}"><span class="nav-icon" aria-hidden="true">f</span>Facebook</a>
+                <a class="nav-link" href="{{ url_for('chat') }}"><span class="nav-icon" aria-hidden="true">◌</span>Зурвас</a>
+                <a class="nav-link" href="{{ url_for('bookings') }}"><span class="nav-icon" aria-hidden="true">▦</span>Захиалга</a>
+                <a class="nav-link{% if entity == 'tours' %} active{% endif %}" href="{{ url_for('manage_records', entity='tours') }}"><span class="nav-icon" aria-hidden="true">⌁</span>Аялал</a>
+                <a class="nav-link{% if entity == 'staff' %} active{% endif %}" href="{{ url_for('manage_records', entity='staff') }}"><span class="nav-icon" aria-hidden="true">♙</span>Ажилтан</a>
+            </nav>
+            <div class="sidebar-account">
+                <span class="sidebar-email">{{ user_email }}</span>
+                <form method="post" action="{{ url_for('logout') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button class="text-button" type="submit">Гарах</button>
+                </form>
+            </div>
+        </aside>
+
+        <div class="main-panel">
+            <header class="topbar">
+                <span class="topbar-label">Удирдлагын самбар</span>
+                <span class="account-email">{{ user_email }}</span>
+            </header>
+
+            <main class="dashboard-content">
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <div class="notice notice-{{ category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endwith %}
+
+                <div class="page-heading">
+                    <div>
+                        <p class="eyebrow">БҮРТГЭЛ</p>
+                        <h1>{{ config.title }}</h1>
+                        <p class="muted">{{ config.title }}-ийн мэдээллийг хайж, удирдана.</p>
+                    </div>
+                    {% if records is not none %}<span class="count-pill">{{ records|length }} бүртгэл</span>{% endif %}
+                </div>
+
+                <section class="manage-form-card" id="record-form">
+                    <div class="manage-section-heading">
+                        <h2>{% if record %}Мэдээлэл засах{% else %}Шинэ {{ config.singular }} нэмэх{% endif %}</h2>
+                        {% if record %}<a class="cancel-link" href="{{ url_for('manage_records', entity=entity, q=search_query) }}">Болих</a>{% endif %}
+                    </div>
+                    {% for error in form_errors %}
+                        <div class="notice" role="alert">{{ error }}</div>
+                    {% endfor %}
+                    <form class="record-form" method="post"
+                          action="{% if record %}{{ url_for('edit_record', entity=entity, record_id=record.id, q=search_query) }}{% else %}{{ url_for('manage_records', entity=entity, q=search_query) }}{% endif %}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <div class="record-fields">
+                            {% for field in config.fields %}
+                                <label class="record-field{% if field.type == 'textarea' %} field-wide{% endif %}" for="{{ field.name }}">
+                                    <span>{{ field.label }}{% if field.required %} <span class="required-mark">*</span>{% endif %}</span>
+                                    {% if field.type == 'textarea' %}
+                                        <textarea id="{{ field.name }}" name="{{ field.name }}" rows="3" {% if field.required %}required{% endif %}>{{ form_values.get(field.name, '') }}</textarea>
+                                    {% elif field.type == 'select' %}
+                                        <select id="{{ field.name }}" name="{{ field.name }}" {% if field.required %}required{% endif %}>
+                                            {% for value, label in field.options %}
+                                                <option value="{{ value }}" {% if form_values.get(field.name, field.options[0][0]) == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <input id="{{ field.name }}" name="{{ field.name }}" type="{{ field.type }}"
+                                               value="{{ form_values.get(field.name, '') }}"
+                                               {% if field.required %}required{% endif %}
+                                               {% if field.min is defined %}min="{{ field.min }}"{% endif %}
+                                               {% if field.step is defined %}step="{{ field.step }}"{% endif %}>
+                                    {% endif %}
+                                </label>
+                            {% endfor %}
+                        </div>
+                        <button class="primary-button record-submit" type="submit">{% if record %}Өөрчлөлт хадгалах{% else %}Нэмэх{% endif %}</button>
+                    </form>
+                </section>
+
+                <section class="records-section">
+                    <div class="records-heading">
+                        <h2>{{ config.title }}-ийн жагсаалт</h2>
+                        <form class="search-form" method="get" action="{{ url_for('manage_records', entity=entity) }}">
+                            <label class="visually-hidden" for="record-search">Бүртгэл хайх</label>
+                            <input id="record-search" type="search" name="q" value="{{ search_query }}" placeholder="Нэр, мэдээллээр хайх">
+                            <button type="submit">Хайх</button>
+                            {% if search_query %}<a href="{{ url_for('manage_records', entity=entity) }}">Арилгах</a>{% endif %}
+                        </form>
+                    </div>
+
+                    {% if records is none %}
+                        <section class="empty-state"><h2>Жагсаалтыг харуулах боломжгүй</h2></section>
+                    {% elif records %}
+                        <div class="table-wrap">
+                            <table class="booking-table records-table">
+                                <thead>
+                                    <tr>
+                                        {% for field in config.fields %}<th>{{ field.label }}</th>{% endfor %}
+                                        <th>Үйлдэл</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in records %}
+                                        <tr>
+                                            {% for field in config.fields %}
+                                                <td class="{% if loop.first %}booking-name{% endif %}">
+                                                    {% if field.name == 'status' %}
+                                                        <span class="status status-{{ item[field.name] }}">{{ {'active': 'Идэвхтэй', 'inactive': 'Идэвхгүй'}.get(item[field.name], item[field.name]) }}</span>
+                                                    {% elif field.name == 'price' %}
+                                                        {{ '{:,.0f}'.format(item[field.name]|float) }} ₮
+                                                    {% else %}
+                                                        {{ item[field.name] }}
+                                                    {% endif %}
+                                                </td>
+                                            {% endfor %}
+                                            <td>
+                                                <div class="record-actions">
+                                                    <a class="record-edit-link" href="{{ url_for('edit_record', entity=entity, record_id=item.id, q=search_query) }}">Засах</a>
+                                                    <a class="record-delete-link" href="{{ url_for('confirm_delete_record', entity=entity, record_id=item.id, q=search_query) }}">Устгах</a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <section class="empty-state">
+                            <span class="empty-icon" aria-hidden="true">✦</span>
+                            <h2>{% if search_query %}Хайлтад тохирох бүртгэл алга{% else %}Бүртгэл алга{% endif %}</h2>
+                            <p class="muted">{% if search_query %}Өөр түлхүүр үгээр хайж үзнэ үү.{% else %}Эхний бүртгэлээ дээрх маягтаар нэмнэ үү.{% endif %}</p>
+                        </section>
+                    {% endif %}
+                </section>
+            </main>
+        </div>
+    </div>
+</body>
+</html>

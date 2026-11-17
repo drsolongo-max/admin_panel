@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="mn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Нэвтрэх | Медива самбар</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="login-page">
+    <main class="login-layout">
+        <section class="welcome-panel">
+            <a class="brand" href="{{ url_for('login') }}">
+                <span class="brand-symbol-wrap"><img class="brand-symbol" src="{{ url_for('static', filename='mediva-symbol.png') }}" alt=""></span>
+                <span class="brand-name">МЕДИВА</span>
+            </a>
+            <div class="welcome-copy">
+                <p class="eyebrow">УДИРДЛАГЫН САМБАР</p>
+                <h1>Агуулгаа нэг дороос удирдаарай.</h1>
+                <p class="welcome-description">Нэвтэрч, хадгалсан ноорог постуудаа харах боломжтой.</p>
+            </div>
+            <span class="welcome-caption">Таны ажлын орон зай</span>
+        </section>
+
+        <section class="form-panel">
+            <div class="form-wrap">
+                <p class="eyebrow">ТАВТАЙ МОРИЛ</p>
+                <h2>Нэвтрэх</h2>
+                <p class="muted">Үргэлжлүүлэхийн тулд мэдээллээ оруулна уу.</p>
+
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}
+                        <div class="notice notice-{{ category }}" role="alert">{{ message }}</div>
+                    {% endfor %}
+                {% endwith %}
+
+                <form method="post" action="{{ url_for('login') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label for="email">И-мэйл хаяг</label>
+                    <input id="email" name="email" type="email" autocomplete="username"
+                           placeholder="нэр@жишээ.mn" required maxlength="254"
+                           value="{{ request.form.get('email', '') }}">
+
+                    <label for="password">Нууц үг</label>
+                    <input id="password" name="password" type="password"
+                           autocomplete="current-password" placeholder="Нууц үгээ оруулна уу"
+                           required>
+
+                    <button class="primary-button" type="submit">Нэвтрэх <span aria-hidden="true">→</span></button>
+                </form>
+                <p class="security-note"><span aria-hidden="true">●</span> Таны нэвтрэх мэдээлэл хамгаалагдсан.</p>
+            </div>
+            <footer>© 2026 Медива · Зөвхөн эрхтэй хэрэглэгчдэд</footer>
+        </section>
+    </main>
+</body>
+</html>

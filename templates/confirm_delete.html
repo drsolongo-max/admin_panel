@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="mn">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Устгах эсэх | Медива самбар</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="dashboard-page">
+    <main class="delete-confirm-page">
+        <section class="delete-confirm-card">
+            <span class="delete-warning-icon" aria-hidden="true">!</span>
+            <p class="eyebrow">УСТГАХЫГ БАТАЛГААЖУУЛАХ</p>
+            <h1>Энэ бүртгэлийг устгах уу?</h1>
+            <p class="muted">Устгасны дараа буцаах боломжгүй. Дараах {{ config.singular }}-ийг устгах гэж байна:</p>
+            <div class="delete-record-summary">
+                {% for field in config.fields %}
+                    <p><strong>{{ field.label }}:</strong> {{ record[field.name] }}</p>
+                {% endfor %}
+            </div>
+            <form method="post" action="{{ url_for('delete_record', entity=entity, record_id=record.id) }}" class="delete-confirm-actions">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="confirm_delete" value="yes">
+                <input type="hidden" name="return_q" value="{{ search_query }}">
+                <button class="confirm-delete-button" type="submit">Тийм, устгах</button>
+                <a class="cancel-delete-button" href="{{ url_for('manage_records', entity=entity, q=search_query) }}">Болих</a>
+            </form>
+        </section>
+    </main>
+</body>
+</html>
